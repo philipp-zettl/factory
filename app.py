@@ -3,7 +3,7 @@ from typing import Union
 
 from fastapi import FastAPI
 from io import BytesIO
-from factory.models import stable_diffusion
+from factory.models import models
 
 
 app = FastAPI()
@@ -22,8 +22,10 @@ def read_item(item_id: int, q: Union[str, None] = None):
 @app.post('/gen/')
 async def generate(payload: dict):
     task = payload.get('task')
+    model_name = task.get('model', 'stable-diffusion')
     print(task)
-    results = stable_diffusion.predict(task.get('prompt'), task.get('options', {}))
+    model = models.get(model_name)
+    results = model.predict(task.get('prompt'), task.get('options', {}))
     result = results[0]
     buffer = BytesIO()
     result.save(buffer, format="JPEG")

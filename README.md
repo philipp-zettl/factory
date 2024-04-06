@@ -5,4 +5,4 @@ Provides API endpoints for general purpose GAI.
 
 ## Features
 - Text2Image:
-  - SDXL 1.5
+  - [SDXL](https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0)

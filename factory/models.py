@@ -9,10 +9,22 @@ class DiffusionModel:
     def __init__(self, model_name):
         model_config = {
             'stable-diffusion': {
-                'base': "stabilityai/stable-diffusion-xl-base-1.0"
+                'base': {
+                    'pretrained_model_name_or_path': "stabilityai/stable-diffusion-xl-base-1.0",
+                    'torch_dtype': torch.float16,
+                    'use_safetensors': True,
+                    'variant': 'fp16',
+                }
+
+            },
+            'small-sd': {
+                'base': {
+                    'pretrained_model_name_or_path': 'segmind/small-sd',
+                    'torch_dtype': torch.float16,
+                }
             }
         }.get(model_name)
-        self.base = DiffusionPipeline.from_pretrained(model_config['base'], torch_dtype=torch.float16, use_safetensors=True, variant="fp16")
+        self.base = DiffusionPipeline.from_pretrained(**model_config['base'])
 
         #self.base.unet = torch.compile(self.base.unet, mode="reduce-overhead", fullgraph=True)
         self.base.enable_model_cpu_offload()
@@ -28,5 +40,8 @@ class DiffusionModel:
         ).images
 
 
-stable_diffusion = DiffusionModel('stable-diffusion')
+models = {
+    'stable_diffusion': DiffusionModel('stable-diffusion'),
+    'small_diffusion': DiffusionModel('small-sd'),
+}
 
