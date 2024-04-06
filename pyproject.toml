@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "factory"
+version = "0.0.0a"
+description = "General Purpose G(enerative)AI service"
+authors = ["Your Name <you@example.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.10,<3.12"
+diffusers = "^0.27.2"
+fastapi = "^0.110.1"
+uvicorn = "^0.29.0"
+torch = "^2.2.2"
+accelerate = "^0.29.1"
+transformers = "^4.39.3"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
