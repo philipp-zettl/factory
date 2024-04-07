@@ -8,6 +8,14 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 class DiffusionModel:
     def __init__(self, model_name):
         model_config = {
+            'ssd-1b': {
+                'base': {
+                    'pretrained_model_name_or_path': 'segmind/SSD-1B',
+                    'torch_dtype': torch.float16,
+                    'use_safetensors': True,
+                    'variant': 'fp16',
+                },
+            },
             'stable-diffusion': {
                 'base': {
                     'pretrained_model_name_or_path': "stabilityai/stable-diffusion-xl-base-1.0",
@@ -22,7 +30,13 @@ class DiffusionModel:
                     'pretrained_model_name_or_path': 'segmind/small-sd',
                     'torch_dtype': torch.float16,
                 }
-            }
+            },
+            'tiny-sd': {
+                'base': {
+                    'pretrained_model_name_or_path': 'segmind/tiny-sd',
+                    'torch_dtype': torch.float16,
+                }
+            },
         }.get(model_name)
         self.base = DiffusionPipeline.from_pretrained(**model_config['base'])
 
@@ -41,7 +55,10 @@ class DiffusionModel:
 
 
 models = {
+    'ssd_1B': DiffusionModel('ssd-1b'),
+    'stable_diffusion': DiffusionModel('stable-diffusion'),
     'stable_diffusion': DiffusionModel('stable-diffusion'),
     'small_diffusion': DiffusionModel('small-sd'),
+    'tiny_diffusion': DiffusionModel('tiny-sd'),
 }
 

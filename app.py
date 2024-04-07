@@ -9,20 +9,10 @@ from factory.models import models
 app = FastAPI()
 
 
-@app.get("/")
-def read_root():
-    return {"Hello": "World"}
-
-
-@app.get("/items/{item_id}")
-def read_item(item_id: int, q: Union[str, None] = None):
-    return {"item_id": item_id, "q": q}
-
-
 @app.post('/gen/')
 async def generate(payload: dict):
     task = payload.get('task')
-    model_name = task.get('model', 'stable-diffusion')
+    model_name = task.get('model', 'ssd_1B')
     print(task)
     model = models.get(model_name)
     results = model.predict(task.get('prompt'), task.get('options', {}))
