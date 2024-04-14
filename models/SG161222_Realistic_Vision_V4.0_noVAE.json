@@ -1,0 +1,23 @@
+{
+  "base": {
+    "pretrained_model_name_or_path": "SG161222/Realistic_Vision_V4.0_noVAE",
+    "torch_dtype": "float16",
+    "use_safetensors": true,
+    "safety_checker": null,
+    "requires_safety_checker": false,
+    "scheduler": {
+      "class": "DDIMScheduler",
+      "args": {
+        "num_train_timesteps": 1000,
+        "beta_start": 0.00085,
+        "beta_end": 0.012,
+        "beta_schedule": "scaled_linear",
+        "clip_sample": false,
+        "set_alpha_to_one": false,
+        "steps_offset": 1
+      }
+    },
+    "vae": "stabilityai/sd-vae-ft-mse"
+  },
+  "enable_model_offload": false
+}

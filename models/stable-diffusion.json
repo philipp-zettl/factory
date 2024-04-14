@@ -1,0 +1,11 @@
+{
+  "base": {
+      "pretrained_model_name_or_path": "EasyBits/ProteusV0.4.fp16",
+      "torch_dtype": "float16",
+      "use_safetensors": true,
+      "variant": "fp16",
+      "safety_checker": null,
+      "requires_safety_checker": false
+  },
+  "use_scheduler": true
+}

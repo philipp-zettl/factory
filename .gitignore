@@ -3,8 +3,18 @@ res*.json
 
 .venv/
 __pycache__/
+.ipynb_checkpoints/
 *.pyc
 
 */.ipynb_checkpoints
 
 datasets/
+*.png
+*.jpg
+
+*.bin
+
+tags
+
+# image_encoder for IP-Adapter
+image_encoder/

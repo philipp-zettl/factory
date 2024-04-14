@@ -1,0 +1,12 @@
+{
+  "base": {
+    "pretrained_model_name_or_path": "segmind/tiny-sd",
+    "torch_dtype": "float16",
+    "safety_checker": null,
+    "requires_safety_checker": false
+  },
+  "loras": [
+      "philipp-zettl/margot_robbie-lora"
+  ],
+  "use_scheduler": false
+}
