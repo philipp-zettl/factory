@@ -1,4 +1,9 @@
 # Factory
+
+> [!IMPORTANT]  
+> This service is in a early phase of development and it's API as well as the supported models are changing frequently.
+> Use the current state as a reference for future development or as a starting point for your own project.
+
 Project/Service for generative AI
 
 Provides API endpoints for general purpose GAI.
