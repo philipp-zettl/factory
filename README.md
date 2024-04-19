@@ -30,16 +30,67 @@ poetry run bash download_models.sh
 ```
 
 ## API
-- `/models/`: List of available models.
-- `/gen/`: Text2Image API for generating images based on SDXL, sends a prompt to generate a new image.
-- `/ip-faces/`: Image2Image API for portraits based on IP-Adapter, sends a single image and a prompt to generate a new image.
-- `/ip-faces-multi/`: Image2Image API for portraits based on IP-Adapter, sends multiple images and a prompt to generate a new portrait.
-- `/ip-person/`: Image2Image API for images of people based on IP-Adapter, sends a single image and a prompt to generate a new image.
-
-**Note**: The API is not public, you need to run the service locally. Apart from this, to send images to the API, you'll need to encode the images in base64.
-The API will return a JSON response with the generated image encoded in base64, too.
+Run the service and see the API documentation at `http://localhost:8888/docs`.
 
 ## Examples:
+
+> [!IMPORTANT] Please note that albeit the API provides an interface to generate multiple images at once,
+> when using the HF InferenceClient, only one image can be generated at a time.
+> This is due to limitations in the HF InferenceClient implementation.
+
+
+### HuggingFace Inferece API Client
+Using the [huggingface.co](https://huggingface.co/) Inference API Client:
+
+### Text2Image
+```python
+from huggingface_hub import InferenceClient
+
+client = InferenceClient("http://localhost:8888/models/tiny_diffusion/text-to-image")
+response = client.text_to_image("A cat in a hat")
+response.save('cat_in_hat.png')
+```
+
+### Image2Image
+#### IP-Adapter (Image Prompt Adapter) - Single Image
+```python
+from huggingface_hub import InferenceClient
+
+client = InferenceClient("http://localhost:8888/models/ip/image-to-image")
+with open("cat.jpg", "rb") as image_file:
+    response = client.image_to_image(image_file.read(), "A cat in a hat")
+    response.save('cat_in_hat.png')
+```
+#### IP-Adapter Portrait (single reference image)
+```python
+from huggingface_hub import InferenceClient
+
+client = InferenceClient("http://localhost:8888/models/ip-faces/image-to-image")
+
+with open('portrait.jpg', 'rb') as image_file:
+    response = client.image_to_image(image_file.read(), "A portrait of a young man")
+    response.save('portrait_you.jpg')
+```
+
+#### IP-Adapter (Image Prompt Adapter) - Multiple Images
+```python
+from huggingface_hub import InferenceClient
+
+client = InferenceClient("http://localhost:8888/models/ip-faces-portrait/image-to-image")
+images = [
+  # YOUR IMAGES
+]
+
+payload_images = []
+for img in images:
+  with open(img, "rb") as image_file:
+    payload_images.append(image_file.read())
+
+response = client.image_to_image(..., "A portrait", images=payload_images)
+response.save('portrait_you.jpg')
+```
+
+## Using the API directly
 Using the `requests` library in Python:
 ```python
 import requests
