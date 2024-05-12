@@ -90,6 +90,27 @@ response = client.image_to_image(..., "A portrait", images=payload_images)
 response.save('portrait_you.jpg')
 ```
 
+#### QRCode Generator
+Currently only via direct HTTP API available
+```python
+import requests
+
+requests.post('http://localhost:7777/models/qr', json={
+    'inputs': 'https://blog.godesteem.de/notes/controlnet/',
+    'parameters': {
+        'prompt': 'A scawy monsta',
+        'num_inference_steps': 15,
+        'guidance_scale': 8.0,
+        #'seed': 420,
+        'negative_prompt': "scawy",
+        'controlnet_conditioning_scale': 0.8,
+        #'s_scale': 0.7
+        'seed': 420,
+    }
+})
+
+```
+
 ## Using the API directly
 Using the `requests` library in Python:
 ```python
@@ -126,5 +147,6 @@ res = requests.post('http://localhost:8889/ip-faces-multi/', json={
 Special thanks to the developers and authors of the models used in this project.
 This project could not have been possible without the following:
 - [IP-Adapter](https://huggingface.co/h94/IP-Adapter/tree/main) for several image2image models
+- [monster-labs](https://huggingface.co/monster-labs/control_v1p_sd15_qrcode_monster) for the QRCode model
 - [huggingface 🤗](https://huggingface.co/) for diffusers and the model-hub
 - [pytorch](https://pytorch.org/) for the amazing deep learning framework
