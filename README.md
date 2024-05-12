@@ -34,7 +34,8 @@ Run the service and see the API documentation at `http://localhost:8888/docs`.
 
 ## Examples:
 
-> [!IMPORTANT] Please note that albeit the API provides an interface to generate multiple images at once,
+> [!IMPORTANT]
+> Please note that albeit the API provides an interface to generate multiple images at once,
 > when using the HF InferenceClient, only one image can be generated at a time.
 > This is due to limitations in the HF InferenceClient implementation.
 
