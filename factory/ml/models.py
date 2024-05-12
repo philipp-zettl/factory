@@ -1,6 +1,6 @@
 from typing import Optional
 from factory.utils import BaseModel
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import torch
 
 
@@ -14,6 +14,7 @@ class ModelConfig(BaseModel):
     requires_safety_checker: bool = False
     vae: str = None
     scheduler: Optional[dict] = None
+    feature_extractor: Optional[dict] = None
 
 
 @dataclass
@@ -31,4 +32,14 @@ class DiffusionPipelineConfig(BaseModel):
 
             self.base = ModelConfig(**data)
 
+
+@dataclass
+class ControlNetConfig(BaseModel):
+    base: str
+    config: dict = field(default_factory=dict)
+    model_params: dict = field(default_factory=dict)
+
+    def __post_init__(self):
+        if 'torch_dtype' in self.config:
+            self.config['torch_dtype'] = torch.float16 if self.config['torch_dtype'] == 'float16' else torch.float32
 

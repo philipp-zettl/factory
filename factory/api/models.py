@@ -6,6 +6,8 @@ class Tasks(str, enum.Enum):
     text_to_image = 'text-to-image'
     image_to_image = 'image-to-image'
     image_to_image_multi = 'image-to-image-multi'
+    text_to_speech = 'text-to-speech'
+    text_to_text = 'text-to-text'
 
 
 class GenerationRequest(BaseModel):
@@ -13,6 +15,7 @@ class GenerationRequest(BaseModel):
     inputs: str | list
     options: dict = {}
     parameters: dict = {}
+    is_multi: bool = False
 
 
 class TextToImageParameters(BaseModel):
@@ -21,7 +24,7 @@ class TextToImageParameters(BaseModel):
     guidance_scale: int = 7
     width: int = 512
     height: int = 512
-    s_scale: float = 1.0
+    s_scale: float = 2.0
     num_samples: int = 1
     seed: int = 2024
 
@@ -40,10 +43,27 @@ class ImageToImageParameters(BaseModel):
     width: int = 512
     height: int = 512
     s_scale: float = 1.0
+    scale: float = 1.0
     num_samples: int = 1
     seed: int = 2024
+    mask_image: str = None
+    controlnet_conditioning_scale: float = 1.0
+
 
 class ImageToImageRequest(GenerationRequest):
     task: Tasks
     inputs: str
     parameters: ImageToImageParameters
+
+
+class TextToSpeechRequest(GenerationRequest):
+    task: Tasks = Tasks.text_to_speech
+    inputs: str
+    parameters: dict = {}
+
+
+class TextGenerationRequest(GenerationRequest):
+    task: Tasks = Tasks.text_to_image
+    inputs: str
+    parameters: dict = {}
+
