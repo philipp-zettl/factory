@@ -1,0 +1,7 @@
+{
+  "base": {
+      "model_id": "EasyBits/ProteusV0.4.fp16"
+  },
+  "use_scheduler": true
+}
+

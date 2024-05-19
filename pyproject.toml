@@ -27,6 +27,10 @@ pydub = "^0.25.1"
 bark = "^0.1.5"
 nltk = "^3.8.1"
 qrcode = "^7.4.2"
+optimum = "^1.19.2"
+onnxruntime-genai = "0.2.0rc7"
+python-multipart = "^0.0.9"
+ipywebrtc = "^0.6.0"
 
 [tool.poetry.group.dev.dependencies]
 pillow = "^10.3.0"

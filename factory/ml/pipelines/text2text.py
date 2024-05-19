@@ -1,6 +1,8 @@
 from factory.ml.pipelines.general import PipelineMixin
 from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
 import torch
+import onnxruntime_genai as og
+import time
 
 
 class SummarizationPipeline(PipelineMixin):
@@ -102,3 +104,87 @@ class SummarizationPipeline(PipelineMixin):
         return self.summarize_via_tokenbatches(text, **options)
 
 
+class ChatPipeline(PipelineMixin):
+    output_type = 'text'
+
+    def __init__(self, model_name='microsoft/DialoGPT-medium'):
+        self.model_name = model_name
+        self.model = og.Model(self.model_name)
+        self.tokenizer = og.Tokenizer(self.model)
+        self.tokenizer_stream = self.tokenizer.create_stream()
+        self.chat_template = '<|user|>\n{input} <|end|>\n<|assistant|>'
+        self.history_template = '<|user|>\n{input} <|end|>\n<|assistant|>\n{response} <|end|>'
+
+    def get_task(self, is_multi):
+        if is_multi:
+            raise ValueError("Invalid task")
+        return "chat-completion"
+
+    def run_task(self, task):
+        if task.task == "chat-completion":
+            return self.chat_completion(task.inputs, task.parameters)
+        raise ValueError("Invalid task")
+
+    def get_options(self):
+        return {
+            'task': 'text-to-text',
+            'output_type': 'text',
+            'parameters': {
+                'inputs': 'A text to chat about',
+            }
+        }
+
+    def chat_completion(self, messages, options, timings=True, verbose=True):
+        search_options = {name:options.get(name) for name in ['do_sample', 'max_length', 'min_length', 'top_p', 'top_k', 'temperature', 'repetition_penalty'] if name in options}
+
+        history = []
+        for message in messages:
+            if message['role'] == 'user':
+                history.append(f'<|user|>\n{message["content"]} <|end|>')
+            elif message['role'] == 'assistant':
+                history.append(f'<|assistant|>\n{message["content"]} <|end|>')
+            else:
+                print(f"Error: Unknown role {message['role']}")
+
+        if len(history) % 2 == 0 and len(history) > 0:
+            raise ValueError("Error: The history should have an even number of messages. The last message should be from the user.")
+        
+
+        prompt = '\n'.join(history)
+
+        # Set the max length to something sensible by default, unless it is specified by the user,
+        # since otherwise it will be set to the entire context length
+        if 'max_length' not in search_options:
+            search_options['max_length'] = 2048
+
+
+        # Keep asking for input prompts in a loop
+        if not prompt:
+            print("Error, input cannot be empty")
+            return
+
+        prompt += '\n<|assistant|>\n'
+        if timings: started_timestamp = time.time()
+
+        # If there is a chat template, use it
+        input_tokens = self.tokenizer.encode(prompt)
+
+        params = og.GeneratorParams(self.model)
+        params.try_use_cuda_graph_with_max_batch_size(1)
+        params.set_search_options(**search_options)
+        params.input_ids = input_tokens
+        generator = og.Generator(self.model, params)
+        new_tokens = []
+        try:
+            while not generator.is_done():
+                generator.compute_logits()
+                generator.generate_next_token()
+                new_token = generator.get_next_tokens()[0]
+                new_tokens.append(self.tokenizer_stream.decode(new_token))
+        except KeyboardInterrupt:
+            print("  --control+c pressed, aborting generation--")
+
+        # Delete the generator to free the captured graph for the next generator, if graph capture is enabled
+        del generator
+
+        return [{"generated_text": ''.join(new_tokens)}]

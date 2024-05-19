@@ -18,19 +18,39 @@ class ModelConfig(BaseModel):
 
 
 @dataclass
+class ONNXModelConfig(BaseModel):
+    model_id: str
+    vae: str = None
+    scheduler: Optional[dict] = None
+
+
+@dataclass
 class DiffusionPipelineConfig(BaseModel):
     base: ModelConfig
     use_scheduler: bool = False
     loras: list[str] = None
     enable_model_offload: bool = True
 
+    _base_config_class = ModelConfig
+
     def __post_init__(self):
         if isinstance(self.base, dict):
             data = self.base
             if 'torch_dtype' in data:
-                data['torch_dtype'] = torch.float16 if data['torch_dtype'] == 'float16' else torch.float32
+                data['torch_dtype'] = {
+                    'float16': torch.float16,
+                    'bfloat16': torch.bfloat16,
+                    'float32': torch.float32
+                }.get(data['torch_dtype'], torch.float32)
 
-            self.base = ModelConfig(**data)
+            self.base = self._base_config_class(**data)
+
+
+@dataclass
+class ONNXDiffusionPipelineConfig(DiffusionPipelineConfig):
+    is_sdxl: bool = False
+    
+    _base_config_class = ONNXModelConfig
 
 
 @dataclass

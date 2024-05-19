@@ -1,16 +1,17 @@
 import base64
-from typing import Union
+from typing import Union, Annotated
 import cv2
 import enum
 import json
 import numpy as np
 import torch
+import traceback
 
-from fastapi import FastAPI, Response
+from fastapi import FastAPI, Response, File, UploadFile, Form
 from pydantic import BaseModel
 from io import BytesIO
 from factory.ml import models
-from factory.api.models import GenerationRequest, TextToImageRequest, ImageToImageRequest, TextToSpeechRequest, TextGenerationRequest
+from factory.api.models import GenerationRequest, TextToImageRequest, ImageToImageRequest, TextToSpeechRequest, TextGenerationRequest, ChatCompletionRequest, SpeechToTextRequest
 from tempfile import NamedTemporaryFile
 from PIL import Image
 
@@ -39,6 +40,8 @@ def send_image_response_base64(results: bytes, format: str = "image/jpeg") -> Re
                 response = json.dumps(response)
             else:
                 response = json.dumps(results)
+        elif isinstance(results, dict):
+            response = json.dumps(results)
         else:
             response = json.dumps([results.tolist()])
     return Response(content=response[0] if len(response) == 1 else response, media_type=format)
@@ -54,29 +57,47 @@ response_type_map = {
 @app.post('/models/{model_name}')
 async def generate(
         model_name: str,
-        q: GenerationRequest | dict,
-        response: Response
+        q: GenerationRequest | dict | None | bytes | str = None,
+        response: Response = None
     ):
     is_multi = 'multi' in model_name
     model_name = model_name.replace('-multi', '').replace('_', '/', 1)
     model = models.get(model_name)
     task = model.get_task(is_multi)
+    task_params = {}
+    if isinstance(q, dict):
+        task_params = {**q}
+    elif isinstance(q, bytes):
+        task_params['inputs'] = q
+        print('Setting inputs from bytes')
+
     task = {
         'text-to-image': TextToImageRequest,
         'image-to-image': ImageToImageRequest,
         'image-to-image-multi': ImageToImageRequest,
         'text-to-speech': TextToSpeechRequest,
         'text-to-text': TextGenerationRequest,
-    }.get(task)(**q, task=task, is_multi=is_multi)
+        'chat-completion': ChatCompletionRequest,
+        'automatic-speech-recognition': SpeechToTextRequest,
+    }.get(task)(**{**task_params, 'task': task, 'is_multi': is_multi})
     if model is None:
         response.status_code = 400
+        print('Model not found')
         return {'error': 'Model not found'}
     try:
         results = model.run_task(task)
     except ValueError as e:
         response.status_code = 400
+        print(f'Error for {q} with task {task} using {task_params}: {e}')
+        tb = traceback.format_exc()
+        print(tb)
         return {'error': str(e)}
     return send_image_response_base64(results, response_type_map.get(model.output_type))
+
+
+@app.post('/models/{model_name}/v1/chat/completions')
+async def chat_completions(model_name: str, q: ChatCompletionRequest, response: Response):
+    return await generate(model_name, q.dict(), response)
 
 
 @app.get('/models')

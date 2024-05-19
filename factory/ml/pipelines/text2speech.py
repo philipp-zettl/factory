@@ -1,4 +1,8 @@
 from factory.ml.pipelines.general import PipelineMixin
+from factory.ml.pipelines.utils.bark_generation import generate_text_semantic, preload_models
+from factory.ml.pipelines.utils.bark_api import semantic_to_waveform
+import nltk
+import random
 from transformers import SpeechT5Processor, SpeechT5ForTextToSpeech, SpeechT5HifiGan, AutoProcessor, AutoModel
 from tempfile import NamedTemporaryFile
 from pydub import AudioSegment
@@ -100,8 +104,8 @@ class BarkTTSPipeline(PipelineMixin, TTSMixin):
 
     def __init__(self, speaker_name='bark'):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.processor = AutoProcessor.from_pretrained("suno/bark", torch_dtype=torch.float16)
-        self.model = AutoModel.from_pretrained("suno/bark", torch_dtype=torch.float16).to(self.device)
+        self.models = preload_models()
+
         self.model_params = {}
 
         self.speakers = {
@@ -113,6 +117,10 @@ class BarkTTSPipeline(PipelineMixin, TTSMixin):
         return {
             'task': 'text-to-speech',
             'output_type': self.output_type,
+            'info': {
+                'description': 'Bark is a text-to-speech model that can generate high-quality speech from text.',
+                'sample_rate': self.sample_rate,
+            },
             'parameters': {
                 'inputs': 'An image of a cat',
                 'speaker': 'tts-1',
@@ -132,8 +140,23 @@ class BarkTTSPipeline(PipelineMixin, TTSMixin):
         raise ValueError("Invalid task")
 
     def text_to_speech(self, text, parameters):
-        speaker = self.speakers.get(parameters.get('speaker'), None)
-        inputs = self.processor(text=[text], return_tensors="pt", voice_preset=speaker).to(self.device)
-        speech = self.model.generate(**inputs, do_sample=True).cpu().numpy().squeeze()
-        return self.speech_to_binary(speech)
+        speaker = self.speakers.get(parameters.get('speaker'), './models/tts/en_speaker_3.npz')
+        GEN_TEMP = 0.6
+
+        sentences = nltk.sent_tokenize(text)
+        pieces = []
+        for sentence in sentences:
+            semantic_tokens = generate_text_semantic(
+                sentence,
+                history_prompt=speaker,
+                temp=GEN_TEMP,
+                min_eos_p=0.05,  # this controls how likely the generation is to end
+            )
+
+            audio_array = semantic_to_waveform(semantic_tokens, history_prompt=speaker,)
+            silence = np.zeros(int(random.randint(1, 10)/100 * self.sample_rate))  # between 0.01 and quarter second of silence
+            pieces += [audio_array, silence.copy()]
+
+
+        return self.speech_to_binary(np.concatenate(pieces))
 

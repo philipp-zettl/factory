@@ -1,5 +1,6 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 import enum
+import numpy as np
 
 
 class Tasks(str, enum.Enum):
@@ -8,6 +9,8 @@ class Tasks(str, enum.Enum):
     image_to_image_multi = 'image-to-image-multi'
     text_to_speech = 'text-to-speech'
     text_to_text = 'text-to-text'
+    chat_completion = 'chat-completion'
+    automatic_speech_recognition = 'automatic-speech-recognition'
 
 
 class GenerationRequest(BaseModel):
@@ -67,3 +70,14 @@ class TextGenerationRequest(GenerationRequest):
     inputs: str
     parameters: dict = {}
 
+
+class ChatCompletionRequest(GenerationRequest):
+    task: Tasks = Tasks.chat_completion
+    inputs: list[dict] = []
+    parameters: dict = {}
+
+
+class SpeechToTextRequest(GenerationRequest):
+    task: Tasks = Tasks.automatic_speech_recognition
+    parameters: dict = {}
+    inputs: bytes = None
