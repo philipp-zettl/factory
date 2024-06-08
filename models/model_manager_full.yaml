@@ -1,0 +1,108 @@
+base_models:
+  sd:
+    constructor: DiffusionModel
+    args:
+      - stable-diffusion
+  sd15:
+    constructor: DiffusionModel
+    args:
+      - SG161222/Realistic_Vision_V4.0_noVAE
+
+
+models:
+    ssd_1B:
+      constructor: DiffusionModel
+      args:
+        - ssd-1b
+    stable-diffusion:
+      constructor: DiffusionModel
+      args:
+        - stable-diffusion
+    stable-diffusion-onnx:
+      constructor: ONNXDiffusionModel
+      args:
+        - stable-diffusion-onnx
+    SG161222/Realistic_Vision_V4.0_noVAE:
+      constructor: DiffusionModel
+      args:
+        - SG161222/Realistic_Vision_V4.0_noVAE
+    small-diffusion:
+      constructor: DiffusionModel
+      args:
+        - small-sd
+    tiny-sd:
+      constructor: DiffusionModel
+      args:
+        - tiny-sd
+
+    # image concepts
+    ip-faces:
+      constructor: IPFaceIDPipeline
+      base_model: sd15
+      kwargs:
+        portrait: False
+    ip-faces-portrait:
+      constructor: IPFaceIDPipeline
+      base_model: sd15
+      kwargs:
+        portrait: True
+    ip:
+      constructor: IPPipeline
+      base_model: sd15
+      kwargs:
+        plus: False
+    ip-plus:
+      constructor: IPPipeline
+      base_model: sd15
+      kwargs:
+        plus: True
+    qr:
+      constructor: QRCodePipeline
+
+    # loras
+    philipp-zettl/margot_robbie-lora:
+      constructor: DiffusionModel
+      args:
+        - philipp-zettl/margot_robbie-lora
+    philipp-zettl/ssd-margot_robbie-lora:
+      constructor: DiffusionModel
+      args:
+        - philipp-zettl/ssd-margot_robbie-lora
+
+    # Speech2Text
+    distil-large-v3:
+      constructor: SpeechToTextPipeline
+      args:
+        - distil-whisper/distil-large-v3
+
+    # TTS
+    tts:
+      constructor: Speech5TTSPipeline
+      args:
+        - tts-1
+    bark-tts:
+      constructor: BarkTTSPipeline
+      args:
+        - tts-2
+
+    # Text-to-Text
+    pszemraj/led-large-book-summary:
+      constructor: SummarizationPipeline
+      args:
+        - pszemraj/led-large-book-summary
+    
+    # LLMs
+    phi-3-mini-128k-chat:
+      constructor: ChatPipeline
+      args:
+        - ./models/cpu_and_mobile/phi-3-128k
+    phi-3-mini-4k-chat:
+      constructor: ChatPipeline
+      args:
+        - ./models/cpu_and_mobile/phi-3-4k
+
+    Qwen2-0.5B-Instruct:
+      constructor: ChatPipeline
+      args:
+        - 'Qwen/Qwen2-0.5B-Instruct'
+

@@ -4,7 +4,7 @@ import cv2
 
 from fastapi import FastAPI, Response
 from io import BytesIO
-from factory.models import models
+from factory.ml import models
 from tempfile import NamedTemporaryFile
 from PIL import Image
 
@@ -27,6 +27,8 @@ async def generate(payload: dict):
     task = payload.get('task')
     model_name = task.get('model', 'ssd_1B')
     print(task)
+    print(models, model_name)
+    print(models.get(model_name))
     model = models.get(model_name)
     if model is None:
         return {'error': 'Model not found'}

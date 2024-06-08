@@ -1,0 +1,14 @@
+{
+  "base": {
+    "pretrained_model_name_or_path": "segmind/ssd-1B",
+    "torch_dtype": "float16",
+    "use_safetensors": true,
+    "variant": "fp16",
+    "safety_checker": null,
+    "requires_safety_checker": false
+  },
+  "loras": [
+      "philipp-zettl/ssd-margot_robbie-lora"
+  ],
+  "use_scheduler": true
+}
