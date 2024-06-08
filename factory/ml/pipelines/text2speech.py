@@ -33,15 +33,12 @@ class Speech5TTSPipeline(PipelineMixin, TTSMixin):
     sample_rate = 16000
 
     def __init__(self, speaker_name='tts'):
-        checkpoint = "microsoft/speecht5_tts"
+        self.checkpoint = "microsoft/speecht5_tts"
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.processor = SpeechT5Processor.from_pretrained(checkpoint)
-        self.model = SpeechT5ForTextToSpeech.from_pretrained(checkpoint).to(self.device)
-        self.vocoder = SpeechT5HifiGan.from_pretrained("microsoft/speecht5_hifigan").to(self.device)
 
         self.current_speaker = None
         self.speaker_embeddings = None
-        self.load_speaker(speaker_name)
+        self.speaker_name = speaker_name
 
         self.model_params = {}
         self.speakers_map = {
@@ -51,6 +48,12 @@ class Speech5TTSPipeline(PipelineMixin, TTSMixin):
             "tts-4": "./models/tts/cmu_us_slt_arctic-wav-arctic_a0508.npy",
             "tts-5": "./models/tts/cmu_us_slt_arctic-wav-arctic_a0002.npy",
         }
+
+    def _load_pipeline(self):
+        self.processor = SpeechT5Processor.from_pretrained(self.checkpoint)
+        self.model = SpeechT5ForTextToSpeech.from_pretrained(self.checkpoint).to(self.device)
+        self.vocoder = SpeechT5HifiGan.from_pretrained("microsoft/speecht5_hifigan").to(self.device)
+        self.load_speaker(self.speaker_name)
 
     def get_options(self):
         return {
@@ -104,14 +107,15 @@ class BarkTTSPipeline(PipelineMixin, TTSMixin):
 
     def __init__(self, speaker_name='bark'):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.models = preload_models()
-
         self.model_params = {}
 
         self.speakers = {
             'tts-1': 'v2/en_speaker_6',
             'tts-2': 'v2/en_speaker_9',
         }
+
+    def _load_pipeline(self):
+        self.models = preload_models()
 
     def get_options(self):
         return {

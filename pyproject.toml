@@ -7,10 +7,10 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = ">=3.10,<3.12"
-diffusers = "^0.27.2"
+diffusers = "0.28.0"
 fastapi = "^0.110.1"
 uvicorn = "^0.29.0"
-torch = "^2.2.2"
+torch = "2.2.2"
 accelerate = "^0.29.1"
 transformers = "^4.39.3"
 peft = "^0.10.0"
@@ -31,6 +31,7 @@ optimum = "^1.19.2"
 onnxruntime-genai = "0.2.0rc7"
 python-multipart = "^0.0.9"
 ipywebrtc = "^0.6.0"
+python-dotenv = "^1.0.1"
 
 [tool.poetry.group.dev.dependencies]
 pillow = "^10.3.0"

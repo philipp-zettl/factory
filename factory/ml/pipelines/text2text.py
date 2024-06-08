@@ -1,5 +1,5 @@
 from factory.ml.pipelines.general import PipelineMixin
-from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
+from transformers import AutoModelForSeq2SeqLM, AutoTokenizer, AutoModelForCausalLM
 import torch
 import onnxruntime_genai as og
 import time
@@ -12,6 +12,7 @@ class SummarizationPipeline(PipelineMixin):
         self.model_name = model_name
         self.device = 'cpu' #cuda' if torch.cuda.is_available() else 'cpu'
 
+    def _load_pipeline(self):
         self.model = AutoModelForSeq2SeqLM.from_pretrained(self.model_name).to(self.device)
         self.tokenizer = AutoTokenizer.from_pretrained(self.model_name)
 
@@ -104,17 +105,9 @@ class SummarizationPipeline(PipelineMixin):
         return self.summarize_via_tokenbatches(text, **options)
 
 
-class ChatPipeline(PipelineMixin):
+class ChatPipelineMixin(PipelineMixin):
     output_type = 'text'
-
-    def __init__(self, model_name='microsoft/DialoGPT-medium'):
-        self.model_name = model_name
-        self.model = og.Model(self.model_name)
-        self.tokenizer = og.Tokenizer(self.model)
-        self.tokenizer_stream = self.tokenizer.create_stream()
-        self.chat_template = '<|user|>\n{input} <|end|>\n<|assistant|>'
-        self.history_template = '<|user|>\n{input} <|end|>\n<|assistant|>\n{response} <|end|>'
-
+    
     def get_task(self, is_multi):
         if is_multi:
             raise ValueError("Invalid task")
@@ -134,8 +127,58 @@ class ChatPipeline(PipelineMixin):
             }
         }
 
+
+class ChatPipeline(ChatPipelineMixin):
+    def __init__(self, model_name):
+        self.model_name = model_name
+        self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
+        super().__init__()
+
+    def _load_pipeline(self):
+        self.model = AutoModelForCausalLM.from_pretrained(
+            self.model_name,
+            torch_dtype="auto",
+            device_map="auto"
+        )#.to(self.device)
+        self.tokenizer = AutoTokenizer.from_pretrained(self.model_name)
+
+    def chat_completion(self, messages, options):
+        text = self.tokenizer.apply_chat_template(
+            messages,
+            tokenize=False,
+            add_generation_prompt=True
+        )
+        model_inputs = self.tokenizer([text], return_tensors="pt").to(self.device)
+
+        generated_ids = self.model.generate(
+            model_inputs.input_ids,
+            **options,
+        )
+        generated_ids = [
+            output_ids[len(input_ids):] for input_ids, output_ids in zip(model_inputs.input_ids, generated_ids)
+        ]
+
+        response = self.tokenizer.batch_decode(generated_ids, skip_special_tokens=True)[0]
+        return [{"generated_text": response}]
+
+
+class ONNXChatPipeline(ChatPipelineMixin):
+    def __init__(self, model_name='microsoft/DialoGPT-medium'):
+        self.model_name = model_name
+        self.chat_template = '<|user|>\n{input} <|end|>\n<|assistant|>'
+        self.history_template = '<|user|>\n{input} <|end|>\n<|assistant|>\n{response} <|end|>'
+        self.allowed_options = [
+            'do_sample', 'max_length', 'min_length', 
+            'top_p', 'top_k', 'temperature', 'repetition_penalty'
+        ]
+
+    def _load_pipeline(self):
+        self.model = og.Model(self.model_name)
+        self.tokenizer = og.Tokenizer(self.model)
+        self.tokenizer_stream = self.tokenizer.create_stream()
+
     def chat_completion(self, messages, options, timings=True, verbose=True):
-        search_options = {name:options.get(name) for name in ['do_sample', 'max_length', 'min_length', 'top_p', 'top_k', 'temperature', 'repetition_penalty'] if name in options}
+        search_options = {name:options.get(name) for name in self.allowed_options if name in options}
 
         history = []
         for message in messages:
@@ -143,10 +186,13 @@ class ChatPipeline(PipelineMixin):
                 history.append(f'<|user|>\n{message["content"]} <|end|>')
             elif message['role'] == 'assistant':
                 history.append(f'<|assistant|>\n{message["content"]} <|end|>')
+            elif message['role'] == 'system':
+                history.append(f'<|system|>\n{message["content"]} <|end|>')
             else:
                 print(f"Error: Unknown role {message['role']}")
 
-        if len(history) % 2 == 0 and len(history) > 0:
+        clean_chat_history = list(filter(lambda x: x['role'] not in ['system'], messages))
+        if len(clean_chat_history) % 2 == 0 and len(clean_chat_history) > 0:
             raise ValueError("Error: The history should have an even number of messages. The last message should be from the user.")
         
 
@@ -170,19 +216,16 @@ class ChatPipeline(PipelineMixin):
         input_tokens = self.tokenizer.encode(prompt)
 
         params = og.GeneratorParams(self.model)
-        params.try_use_cuda_graph_with_max_batch_size(1)
+        params.try_graph_capture_with_max_batch_size(1)
         params.set_search_options(**search_options)
         params.input_ids = input_tokens
         generator = og.Generator(self.model, params)
         new_tokens = []
-        try:
-            while not generator.is_done():
-                generator.compute_logits()
-                generator.generate_next_token()
-                new_token = generator.get_next_tokens()[0]
-                new_tokens.append(self.tokenizer_stream.decode(new_token))
-        except KeyboardInterrupt:
-            print("  --control+c pressed, aborting generation--")
+        while not generator.is_done():
+            generator.compute_logits()
+            generator.generate_next_token()
+            new_token = generator.get_next_tokens()[0]
+            new_tokens.append(self.tokenizer_stream.decode(new_token))
 
         # Delete the generator to free the captured graph for the next generator, if graph capture is enabled
         del generator

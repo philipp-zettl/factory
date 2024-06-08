@@ -7,10 +7,12 @@ import numpy as np
 import torch
 import traceback
 
+from factory import config
+
 from fastapi import FastAPI, Response, File, UploadFile, Form
 from pydantic import BaseModel
 from io import BytesIO
-from factory.ml import models
+from factory.ml import manager
 from factory.api.models import GenerationRequest, TextToImageRequest, ImageToImageRequest, TextToSpeechRequest, TextGenerationRequest, ChatCompletionRequest, SpeechToTextRequest
 from tempfile import NamedTemporaryFile
 from PIL import Image
@@ -60,9 +62,18 @@ async def generate(
         q: GenerationRequest | dict | None | bytes | str = None,
         response: Response = None
     ):
+    if not config.LOAD_MODELS:
+        response.status_code = 503
+        return {'error': 'Models are not loaded'}
+
     is_multi = 'multi' in model_name
     model_name = model_name.replace('-multi', '').replace('_', '/', 1)
-    model = models.get(model_name)
+    model = manager.get_model(model_name)
+    if model is None:
+        response.status_code = 400
+        print('Model not found')
+        return {'error': 'Model not found'}
+
     task = model.get_task(is_multi)
     task_params = {}
     if isinstance(q, dict):
@@ -97,6 +108,10 @@ async def generate(
 
 @app.post('/models/{model_name}/v1/chat/completions')
 async def chat_completions(model_name: str, q: ChatCompletionRequest, response: Response):
+    if not config.LOAD_MODELS:
+        response.status_code = 503
+        return {'error': 'Models are not loaded'}
+
     return await generate(model_name, q.dict(), response)
 
 
@@ -104,10 +119,13 @@ async def chat_completions(model_name: str, q: ChatCompletionRequest, response: 
 async def get_models():
     return {
         model_name: model.get_options()
-        for model_name, model in models.items()
+        for model_name, model in manager.get_all_models().items()
     }
 
 
 @app.get('/models/{model_name}')
 async def get_model(model_name: str):
-    return models.get(model_name).get_options()
+    model = manager.get_model(model_name)
+    if model is None:
+        return {'error': 'Model not found'}
+    return model.get_options()

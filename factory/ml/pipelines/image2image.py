@@ -31,11 +31,11 @@ class IPAdapterMixin:
         vae_model_path = vae_model_path or  "stabilityai/sd-vae-ft-mse"
         base_model_path = base_model_path or "SG161222/Realistic_Vision_V4.0_noVAE"
         device = "cuda" if torch.cuda.is_available() else "cpu"
-
-        if pipeline is None:
-            pipeline = DiffusionModel(base_model_path).base
-
         self.pipeline = pipeline
+
+    def _load_pipeline(self):
+        if self.pipeline is None:
+            self.pipeline = DiffusionModel(base_model_path).base
 
 
 class IPFaceIDPipeline(IPAdapterMixin, PipelineMixin):
@@ -44,19 +44,8 @@ class IPFaceIDPipeline(IPAdapterMixin, PipelineMixin):
     def __init__(self, pipeline, portrait=False):
         super().__init__(pipeline, "SG161222/Realistic_Vision_V4.0_noVAE")
         self.portrait = portrait
-        ip_ckpt = "./models/ip-adapter/ip-adapter-faceid-portrait_sd15.bin" if portrait else "./models/ip-adapter/ip-adapter-faceid-plusv2_sd15.bin"
-        device = "cuda"
-
-        # load ip-adapter
-        if portrait:
-            self.adapter = IPAdapterFaceID(self.pipeline, ip_ckpt, device, num_tokens=16, n_cond=5)#, torch_dtype=torch.float16)
-        else:
-            image_encoder_path = "laion/CLIP-ViT-H-14-laion2B-s32B-b79K"
-            self.adapter = IPAdapterFaceIDPlus(self.pipeline, image_encoder_path, ip_ckpt, device, torch_dtype=torch.float16)
-        self.face_app = FaceAnalysis(name="buffalo_l", providers=["CUDAExecutionProvider", "CPUExecutionProvider"])
-        self.face_app.prepare(ctx_id=0, det_size=(640, 640))
-
-        self.use_shortcut = ip_ckpt == "./models/ip-adapter/ip-adapter-faceid-plusv2_sd15.bin"
+        self.ip_ckpt = "./models/ip-adapter/ip-adapter-faceid-portrait_sd15.bin" if portrait else "./models/ip-adapter/ip-adapter-faceid-plusv2_sd15.bin"
+        self.device = "cuda"
         self.model_params = {
             "num_inference_steps": 35,
             "negative_prompt": "monochrome, lowres, bad anatomy, worst quality, low quality, blurry",
@@ -68,6 +57,19 @@ class IPFaceIDPipeline(IPAdapterMixin, PipelineMixin):
         }
         self.faceid_embeds = None
         self.face_image = None
+
+    def _load_pipeline(self):
+        super()._load_pipeline()
+        # load ip-adapter
+        if portrait:
+            self.adapter = IPAdapterFaceID(self.pipeline, self.ip_ckpt, self.device, num_tokens=16, n_cond=5)#, torch_dtype=torch.float16)
+        else:
+            image_encoder_path = "laion/CLIP-ViT-H-14-laion2B-s32B-b79K"
+            self.adapter = IPAdapterFaceIDPlus(self.pipeline, image_encoder_path, self.ip_ckpt, self.device, torch_dtype=torch.float16)
+        self.face_app = FaceAnalysis(name="buffalo_l", providers=["CUDAExecutionProvider", "CPUExecutionProvider"])
+        self.face_app.prepare(ctx_id=0, det_size=(640, 640))
+
+        self.use_shortcut = self.ip_ckpt == "./models/ip-adapter/ip-adapter-faceid-plusv2_sd15.bin"
 
     def get_options(self):
         return {
@@ -150,14 +152,10 @@ class IPPipeline(IPAdapterMixin, PipelineMixin):
 
     def __init__(self, pipeline, plus=False):
         super().__init__(pipeline)
-        image_encoder_path = "./models/image_encoder/"
-        ip_ckpt = "./models/ip-adapter/ip-adapter-plus_sd15.bin" if plus else "./models/ip-adapter/ip-adapter_sd15.bin"
-        device = "cuda"
-
-        if plus:
-            self.adapter = IPAdapterPlus(self.pipeline, image_encoder_path, ip_ckpt, device, num_tokens=16)
-        else:
-            self.adapter = IPAdapter(self.pipeline, image_encoder_path, ip_ckpt, device)
+        self.image_encoder_path = "./models/image_encoder/"
+        self.ip_ckpt = "./models/ip-adapter/ip-adapter-plus_sd15.bin" if plus else "./models/ip-adapter/ip-adapter_sd15.bin"
+        self.device = "cuda"
+        self.plus = plus
 
         self.model_params = {
             'negative_prompt': 'monochrome, lowres, bad anatomy, worst quality, low quality, blurry',
@@ -166,6 +164,13 @@ class IPPipeline(IPAdapterMixin, PipelineMixin):
             'height': 512,
             'scale': 1.0,
         }
+
+    def _load_pipeline(self):
+        super()._load_pipeline()
+        if self.plus:
+            self.adapter = IPAdapterPlus(self.pipeline, self.image_encoder_path, self.ip_ckpt, self.device, num_tokens=16)
+        else:
+            self.adapter = IPAdapter(self.pipeline, self.image_encoder_path, self.ip_ckpt, self.device)
 
     def get_task(self, is_multi):
         if is_multi:
@@ -206,20 +211,7 @@ class ImpaintPipeline(PipelineMixin):
 
     def __init__(self):
         super().__init__()
-
-        self.pipe = AutoPipelineForInpainting.from_pretrained(
-            "runwayml/stable-diffusion-inpainting",
-            torch_dtype=torch.float16,
-            variant="fp16",
-        ).to("cuda")
-
-        # set scheduler
-        self.pipe.scheduler = LCMScheduler.from_config(pipe.scheduler.config)
-
-        # load LCM-LoRA
-        self.pipe.load_lora_weights("latent-consistency/lcm-lora-sdv1-5")
-        self.pipe.fuse_lora()
-
+        self.pipe = None
         self.model_params = {
             'negative_prompt': 'monochrome, lowres, bad anatomy, worst quality, low quality, blurry',
             'num_inference_steps': 45,
@@ -227,6 +219,21 @@ class ImpaintPipeline(PipelineMixin):
             'height': 512,
             'scale': 1.0,
         }
+
+    def _load_pipeline(self):
+        self.pipe = AutoPipelineForInpainting.from_pretrained(
+            "runwayml/stable-diffusion-inpainting",
+            torch_dtype=torch.float16,
+            variant="fp16",
+        ).to("cuda")
+
+        # set scheduler
+        self.pipe.scheduler = LCMScheduler.from_config(self.ipe.scheduler.config)
+
+        # load LCM-LoRA
+        self.pipe.load_lora_weights("latent-consistency/lcm-lora-sdv1-5")
+        self.pipe.fuse_lora()
+
 
     def get_task(self, is_multi):
         if is_multi:
@@ -254,7 +261,6 @@ class ImpaintPipeline(PipelineMixin):
         raise ValueError("Invalid task")
 
     def image_to_image(self, image: Image, mask_ip: Image, prompt: Optional[str] = None, options: Optional[dict] = None):
-        print(f'prompt: {prompt}, options: {options}')
         return self.pipe(
             image=image,
             mask_image=mask_ip,
@@ -275,19 +281,30 @@ class ControlNetPipeline(PipelineMixin):
                 with open(os.path.join('./models/configs/controlnet', file)) as f:
                     model_config = ControlNetConfig(**json.load(f))
 
-        if not model_config:
+        self.model_config = model_config
+        if not self.model_config:
             raise ValueError("Invalid controlnet config")
-        
-        if controlnet_pipeline is None:
-            controlnet = ControlNetModel.from_pretrained(model_config.base, **model_config.config)
-            controlnet_pipeline = StableDiffusionControlNetPipeline.from_pretrained(
+
+        self.controlnet_pipeline = controlnet_pipeline
+        self.model_params = {
+            **self.model_config.model_params,
+            'negative_prompt': 'monochrome, lowres, bad anatomy, worst quality, low quality, blurry',
+            'num_inference_steps': 4,
+            'controlnet_conditioning_scale': 1.0,
+            'guidance_scale': 1.0
+        }
+
+    def _load_pipeline(self):
+        if self.controlnet_pipeline is None:
+            controlnet = ControlNetModel.from_pretrained(self.model_config.base, **self.model_config.config)
+            self.controlnet_pipeline = StableDiffusionControlNetPipeline.from_pretrained(
                 "SimianLuo/LCM_Dreamshaper_v7",
                 controlnet=controlnet,
                 safety_checker=None,
                 torch_dtype=torch.float16,
             ).to("cuda")
 
-        self.pipe = controlnet_pipeline
+        self.pipe = self.controlnet_pipeline
         # set scheduler
         self.pipe.scheduler = LCMScheduler.from_config(self.pipe.scheduler.config)
 
@@ -297,14 +314,6 @@ class ControlNetPipeline(PipelineMixin):
         self.pipe.fuse_lora()
         """
         self.pipe.enable_model_cpu_offload()
-
-        self.model_params = {
-            **model_config.model_params,
-            'negative_prompt': 'monochrome, lowres, bad anatomy, worst quality, low quality, blurry',
-            'num_inference_steps': 4,
-            'controlnet_conditioning_scale': 1.0,
-            'guidance_scale': 1.0
-        }
 
 
     def get_task(self, is_multi):
@@ -341,7 +350,7 @@ class ControlNetPipeline(PipelineMixin):
 
     def image_to_image(self, qrcode_image: Image, prompt: Optional[str] = None, options: Optional[dict] = None):
         print(f'prompt: {prompt}')
-        seed = 420
+        seed = options.pop('seed', 420)
         generator = torch.manual_seed(seed) if seed != -1 else torch.Generator()
          
         return self.pipe(

@@ -1,0 +1,6 @@
+models:
+  stable-diffusion:
+    constructor: DiffusionModel
+    args:
+      - stable-diffusion
+

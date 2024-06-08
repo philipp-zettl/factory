@@ -12,6 +12,7 @@ class SpeechToTextPipeline(PipelineMixin):
         self.model_name = model_name
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
+    def _load_pipeline(self):
         torch_dtype = torch.float16 if torch.cuda.is_available() else torch.float32
         model = AutoModelForSpeechSeq2Seq.from_pretrained(
             model_name, torch_dtype=torch_dtype, low_cpu_mem_usage=True, use_safetensors=True
