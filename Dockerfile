@@ -32,6 +32,8 @@ WORKDIR /app
 
 COPY . ./
 
+RUN ./download_models.sh
+
 EXPOSE 8000
 
 ENTRYPOINT ["poetry", "run", "uvicorn", "app_v2:app", "--port", "8000", "--host", "0.0.0.0"]

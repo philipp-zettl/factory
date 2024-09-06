@@ -95,7 +95,7 @@ models:
     phi-3-mini-128k-chat:
       constructor: ChatPipeline
       args:
-        - ./models/cpu_and_mobile/phi-3-128k
+        - ./models/phi-3-mini-128k-chat
     phi-3-mini-4k-chat:
       constructor: ChatPipeline
       args:

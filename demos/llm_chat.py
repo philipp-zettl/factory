@@ -16,7 +16,7 @@ class bcolors:
 
 
 class LLMChat:
-    def __init__(self, host: str, prompt: str | None = None, model_name: str = 'Qwen2-0.5B-Instruct'):
+    def __init__(self, host: str, prompt: str | None = None, model_name: str = 'phi-3-mini-128k-chat'):
         self.session = Session()
         self.host_url = host
         self.history = [{
@@ -45,7 +45,7 @@ class LLMChat:
 
 def parse_args():
     parser = ArgumentParser()
-    parser.add_argument('--model', type=str, default='Qwen2-0.5B-Instruct')
+    parser.add_argument('--model', type=str, default='phi-3-mini-128k-chat')
     parser.add_argument('--prompt', type=str, default=None)
     parser.add_argument('--host', type=str, default='http://localhost:8001')
     return parser.parse_args()

@@ -1,6 +1,6 @@
 models:
-  Qwen2-0.5B-Instruct:
-    constructor: ChatPipeline
+  phi-3-mini-128k-chat:
+    constructor: ONNXChatPipeline
     args:
-      - 'Qwen/Qwen2-0.5B-Instruct'
+      - ./models/phi-3-mini-128k-chat
 
