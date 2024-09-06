@@ -1,5 +1,6 @@
 from requests import Session
 from argparse import ArgumentParser
+from urllib.parse import urljoin
 
 
 class bcolors:
@@ -15,8 +16,9 @@ class bcolors:
 
 
 class LLMChat:
-    def __init__(self, username: str, password: str, prompt: str | None = None, model_name: str = 'Qwen2-0.5B-Instruct'):
+    def __init__(self, host: str, prompt: str | None = None, model_name: str = 'Qwen2-0.5B-Instruct'):
         self.session = Session()
+        self.host_url = host
         self.history = [{
             'role': 'system',
             'content': prompt or 'You are a helpful bot having a conversation with a user. You are a senior Data Scientist and support the user in all work related questions and tasks. You answer honest and short. And never lose your temper.'
@@ -26,7 +28,7 @@ class LLMChat:
     def send_message(self, message: str):
         self.history.append({'role': 'user', 'content': message})
         res = self.session.post(
-            f'http://localhost:8001/models/{self.model_name}',
+            urljoin(urljoin(self.host_url, 'models/'), self.model_name),
             json={
                 'inputs': self.history,
                 'parameters': {'use_cache': False, 'max_new_tokens': 250}
@@ -45,12 +47,13 @@ def parse_args():
     parser = ArgumentParser()
     parser.add_argument('--model', type=str, default='Qwen2-0.5B-Instruct')
     parser.add_argument('--prompt', type=str, default=None)
+    parser.add_argument('--host', type=str, default='http://localhost:8001')
     return parser.parse_args()
 
 
 def main():
     args = parse_args()
-    llm = LLMChat('username', 'password', args.prompt, args.model)
+    llm = LLMChat(args.host, args.prompt, args.model)
     while True:
         message = input(f'{bcolors.OKBLUE}You: ')
         print(f'{bcolors.ENDC}')
