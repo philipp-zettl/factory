@@ -24,7 +24,7 @@ class GenerationRequest(BaseModel):
 class TextToImageParameters(BaseModel):
     negative_prompt: str = None
     num_inference_steps: int = 45
-    guidance_scale: int = 7
+    guidance_scale: float = 7
     width: int = 512
     height: int = 512
     s_scale: float = 2.0
@@ -42,7 +42,7 @@ class ImageToImageParameters(BaseModel):
     negative_prompt: str = None
     images: list = []
     num_inference_steps: int = 45
-    guidance_scale: int = 7
+    guidance_scale: float = 7
     width: int = 512
     height: int = 512
     s_scale: float = 1.0

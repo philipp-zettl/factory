@@ -1,6 +1,6 @@
 models:
-  stable-diffusion:
-    constructor: DiffusionModel
+  Qwen2-0.5B-Instruct:
+    constructor: ChatPipeline
     args:
-      - stable-diffusion
+      - 'Qwen/Qwen2-0.5B-Instruct'
 

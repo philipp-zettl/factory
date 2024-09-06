@@ -106,10 +106,22 @@ class DiffusionModel(PipelineMixin):
 
     def text_to_image(self, prompt, options):
         negative_prompt = options.pop('negative_prompt', None)
-        prompt_embeds, negative_prompt_embeds, pooled_prompt_embeds, negative_pooled_prompt_embeds = self.base.encode_prompt(
+        prompt_embeds, pooled_embeds = self.base.encode_prompt(
             prompt,
-            negative_prompt=negative_prompt
+            negative_prompt=negative_prompt,
+            device='cpu',
+            num_images_per_prompt=1,
+            do_classifier_free_guidance=False
         )
+        if isinstance(prompt_embeds, (list, tuple)):
+            negative_prompt_embeds = prompt_embeds[1]
+            prompt_embeds = prompt_embeds[0]
+            negative_pooled_prompt_embeds = pooled_embeds[1]
+            pooled_prompt_embeds = pooled_embeds[0]
+        else:
+            negative_prompt_embeds = None
+            negative_pooled_prompt_embeds = None
+            pooled_prompt_embeds = pooled_embeds
 
         return self.base(
             prompt_embeds=prompt_embeds,

@@ -216,7 +216,7 @@ class ONNXChatPipeline(ChatPipelineMixin):
         input_tokens = self.tokenizer.encode(prompt)
 
         params = og.GeneratorParams(self.model)
-        params.try_graph_capture_with_max_batch_size(1)
+        params.try_use_cuda_graph_with_max_batch_size(1)
         params.set_search_options(**search_options)
         params.input_ids = input_tokens
         generator = og.Generator(self.model, params)
