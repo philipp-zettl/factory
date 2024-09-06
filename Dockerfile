@@ -11,7 +11,7 @@ RUN apt-get update \
     && apt-get upgrade -y \
     && apt-get install  -y \
         # deps for installing poetry
-        curl \
+        curl wget \
         build-essential \
         ffmpeg libsm6 libxext6 \
     \
