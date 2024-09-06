@@ -48,7 +48,7 @@ def parse_args():
     return parser.parse_args()
 
 
-if __name__ == '__main__':
+def main():
     args = parse_args()
     llm = LLMChat('username', 'password', args.prompt, args.model)
     while True:
@@ -59,3 +59,10 @@ if __name__ == '__main__':
             break
         response = llm.send_message(message)
         print(f'{bcolors.OKGREEN}Bot: {response}{bcolors.ENDC}')
+
+if __name__ == '__main__':
+    try:
+        main()
+    except BaseException as e:
+        print(bcolors.ENDC, end='')
+        raise e
