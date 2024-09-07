@@ -3197,9 +3197,9 @@ files = [
 
 [package.dependencies]
 numpy = [
+    {version = ">=1.23.5", markers = "python_version >= \"3.11\""},
     {version = ">=1.21.4", markers = "python_version >= \"3.10\" and platform_system == \"Darwin\" and python_version < \"3.11\""},
     {version = ">=1.21.2", markers = "platform_system != \"Darwin\" and python_version >= \"3.10\" and python_version < \"3.11\""},
-    {version = ">=1.23.5", markers = "python_version >= \"3.11\""},
 ]
 
 [[package]]
@@ -3220,9 +3220,9 @@ files = [
 
 [package.dependencies]
 numpy = [
+    {version = ">=1.23.5", markers = "python_version >= \"3.11\""},
     {version = ">=1.21.4", markers = "python_version >= \"3.10\" and platform_system == \"Darwin\" and python_version < \"3.11\""},
     {version = ">=1.21.2", markers = "platform_system != \"Darwin\" and python_version >= \"3.10\" and python_version < \"3.11\""},
-    {version = ">=1.23.5", markers = "python_version >= \"3.11\""},
 ]
 
 [[package]]
@@ -3241,8 +3241,11 @@ coloredlogs = "*"
 datasets = "*"
 huggingface-hub = ">=0.8.0"
 numpy = "<2.0"
+onnx = {version = "*", optional = true, markers = "extra == \"exporters\""}
+onnxruntime = {version = "*", optional = true, markers = "extra == \"exporters\""}
 packaging = "*"
 sympy = "*"
+timm = {version = "*", optional = true, markers = "extra == \"exporters\""}
 torch = ">=1.11"
 transformers = {version = ">=4.29.0,<4.44.0", extras = ["sentencepiece"]}
 
@@ -3332,8 +3335,8 @@ files = [
 
 [package.dependencies]
 numpy = [
-    {version = ">=1.22.4", markers = "python_version < \"3.11\""},
     {version = ">=1.23.2", markers = "python_version == \"3.11\""},
+    {version = ">=1.22.4", markers = "python_version < \"3.11\""},
 ]
 python-dateutil = ">=2.8.2"
 pytz = ">=2020.1"
@@ -5038,6 +5041,24 @@ xml = ["defusedxml", "lxml"]
 zarr = ["fsspec", "zarr"]
 
 [[package]]
+name = "timm"
+version = "1.0.9"
+description = "PyTorch Image Models"
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "timm-1.0.9-py3-none-any.whl", hash = "sha256:ce5a4bac57a6cbb2be4ee35dc4ce689eede10d647e48dd1836106e2cc199693b"},
+    {file = "timm-1.0.9.tar.gz", hash = "sha256:69523aa2c34820cc6db37005302b5e42ddd60c30f476643f133ead4a8c5b5533"},
+]
+
+[package.dependencies]
+huggingface_hub = "*"
+pyyaml = "*"
+safetensors = "*"
+torch = "*"
+torchvision = "*"
+
+[[package]]
 name = "tinycss2"
 version = "1.3.0"
 description = "A tiny CSS parser"
@@ -6149,4 +6170,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.10,<3.12"
-content-hash = "ab1204dae673adb2b8b0fdc09775238b4f30376a163639bcfabc4f70fbefe98e"
+content-hash = "1d7184d9d7510f6783918958c284e67145b552da0051df294b220e1d73563a36"

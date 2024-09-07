@@ -56,6 +56,34 @@ You can do this by running:
 poetry run bash download_models.sh
 ```
 
+## Configuration
+To configure models available in the API, you can use the `./models/model_manager.yaml` file.
+
+An example for tested and supported models can be found in the `./models/model_manager_full.yaml` file.
+
+The service supports pytorch models, ONNX models and HuggingFace (i.e. pickle or safetensors) models.
+
+### Considerations
+It is important to note that native pytorch models are generally slower than ONNX models when running on CPU devices.
+
+To overcome this limitation, we can convert any model on HuggingFace to an ONNX model using the `optimum-cli` tool
+```shell
+poetry run optimum-cli export onnx --model_name "model_name" --output_dir "output_dir"
+```
+
+Supported pipelines are:
+- ONNXDiffusionPipeline
+- ONNXChatPipeline
+
+> [!IMPORTANT]
+> For transformer based models we can also add a quantization step to further reduce the model size and increase inference speed.
+
+To do so, we can use the `optimum-cli` tool:
+```shell
+poetry run optimum-cli export onnx --model_name "model_name" --optimize O1 --output_dir "output_dir"
+```
+check the available optimization levels with `poetry run optimum-cli export onnx --help` for more information.
+
 ## API
 Launch the API via:
 ```bash
@@ -75,6 +103,49 @@ You can change the port mappings in the `docker-compose.yaml` file to your likin
 This basically spins off an instance of NGINX to route the requests to the respective services.
 You can find the underlying configuration in the `nginx.conf` file.
 
+## Rotating Models
+> [!NOTE]
+> Please note that the docker setup currently only supports CPU devices, GPU support is not yet implemented.
+> Due to that fact most Text2Image models are not usable in the docker setup.
+> To overcome this limitation, we provide an option to use the ONNX-runtime for Text2Image and Text2Text models.
+> This also accelerates the inference process.
+
+To rotate models, you can change the configuration provided in the `./models/model_manager.yaml` file.
+You can find example configurations in the `./models/model_manager_full.yaml` file.
+
+### Altering base models
+In the beginning of the `model_manager.yaml` file, you can find the `base_models` section.
+This section defines the base models that are used in modular pipelines.
+
+This is extremely useful when you want to run a single base model with different attachments.
+For instance, for stable diffusion based models we can attach LoRA models, ControlNet variants or the IP-Adapter to the base models.
+Instead of running multiple instances of the same base model, we can attach the respective models to it and perform inference with the smallest memory footprint possible.
+
+For instance, we can attach the IP-Adapter and IP-Adapter-PLUS to the Realistic Vision model:
+```yaml
+base_models:
+  sd15:
+    constructor: DiffusionModel
+    args:
+      - SG161222/Realistic_Vision_V4.0_noVAE
+
+models:
+  ip:
+    constructor: IPPipeline
+    base_model: sd15
+    kwargs:
+      plus: False
+  ip-plus:
+    constructor: IPPipeline
+    base_model: sd15
+    kwargs:
+      plus: True
+```
+
+### Model configurations
+You can find pre-created configurations in the `./models/configs/` directory.
+In essence, the configurations are simple YAML files that define the model, the pipeline and the respective parameters passed to the pipeline.
+
 ## Examples:
 
 > [!IMPORTANT]
@@ -90,7 +161,7 @@ Using the [huggingface.co](https://huggingface.co/) Inference API Client:
 ```python
 from huggingface_hub import InferenceClient
 
-client = InferenceClient("http://localhost:8888/models/tiny_diffusion")
+client = InferenceClient("http://localhost:8000/models/tiny_diffusion")
 response = client.text_to_image("A cat in a hat")
 response.save('cat_in_hat.png')
 ```
@@ -100,7 +171,7 @@ response.save('cat_in_hat.png')
 ```python
 from huggingface_hub import InferenceClient
 
-client = InferenceClient("http://localhost:8888/models/ip")
+client = InferenceClient("http://localhost:8000/models/ip")
 with open("cat.jpg", "rb") as image_file:
     response = client.image_to_image(image_file.read(), "A cat in a hat")
     response.save('cat_in_hat.png')
@@ -109,7 +180,7 @@ with open("cat.jpg", "rb") as image_file:
 ```python
 from huggingface_hub import InferenceClient
 
-client = InferenceClient("http://localhost:8888/models/ip-faces")
+client = InferenceClient("http://localhost:8000/models/ip-faces")
 
 with open('portrait.jpg', 'rb') as image_file:
     response = client.image_to_image(image_file.read(), "A portrait of a young man")
@@ -120,7 +191,7 @@ with open('portrait.jpg', 'rb') as image_file:
 ```python
 from huggingface_hub import InferenceClient
 
-client = InferenceClient("http://localhost:8888/models/ip-faces-portrait")
+client = InferenceClient("http://localhost:8000/models/ip-faces-portrait")
 images = [
   # YOUR IMAGES
 ]

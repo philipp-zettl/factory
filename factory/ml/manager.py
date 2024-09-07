@@ -3,17 +3,19 @@ import yaml
 
 
 available_constructors = {
+    # Diffuser and Transformer models
     IPPipeline.__name__: IPPipeline,
     IPFaceIDPipeline.__name__: IPFaceIDPipeline,
     DiffusionModel.__name__: DiffusionModel,
-    ONNXDiffusionModel.__name__: ONNXDiffusionModel,
     Speech5TTSPipeline.__name__: Speech5TTSPipeline,
     BarkTTSPipeline.__name__: BarkTTSPipeline,
     SummarizationPipeline.__name__: SummarizationPipeline,
     QRCodePipeline.__name__: QRCodePipeline,
     ChatPipeline.__name__: ChatPipeline,
-    ONNXChatPipeline.__name__: ONNXChatPipeline,
     SpeechToTextPipeline.__name__: SpeechToTextPipeline,
+    # ONNX support
+    ONNXDiffusionModel.__name__: ONNXDiffusionModel,
+    ONNXChatPipeline.__name__: ONNXChatPipeline,
 }
 
 class ModelManager:

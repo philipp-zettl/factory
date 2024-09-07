@@ -143,7 +143,6 @@ class ONNXDiffusionModel(DiffusionModel):
 
         self.model_config = model_config
 
-
         self.model_params = {
             "num_inference_steps": 1,
         }
@@ -162,7 +161,12 @@ class ONNXDiffusionModel(DiffusionModel):
         else:
             pipeline = ORTStableDiffusionXLPipeline
             
-        self.base = pipeline.from_pretrained(**model_args, export=True)#.to(device)
+        self.base = pipeline.from_pretrained(**model_args)#, export=True)#.to(device)
+        self.allowed_params = [
+            'prompt', 'height', 'width', 'num_inference_steps', 'guidance_scale', 'negative_prompt', 'num_images_per_prompt',
+            'eta' 'generator', 'latents', 'prompt_embeds', 'negative_prompt_embeds', 'output_type', 'return_dict', 'callback'
+            'callback_steps', 'guidance_rescale',
+        ]
 
     def get_options(self):
         return {
@@ -183,3 +187,17 @@ class ONNXDiffusionModel(DiffusionModel):
         if task.task == "text-to-image":
             return self.text_to_image(task.inputs, task.parameters.dict() or self.model_params)
         raise ValueError("Invalid task")
+    
+    def text_to_image(self, prompt, options):
+        negative_prompt = options.pop('negative_prompt', None)
+        options = {
+            k: v
+            for k, v in {**self.model_params, **options}.items()
+            if k in self.allowed_params
+        }
+        return self.base(
+            prompt=prompt,
+            negative_prompt=negative_prompt,
+            **options
+        ).images
+
