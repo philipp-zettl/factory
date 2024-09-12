@@ -32,6 +32,10 @@ class SummarizationPipeline(PipelineMixin):
             'output_type': 'text',
             'parameters': {
                 'inputs': 'A text to summarize',
+                'parameters': {
+                    'batch_length': 'Number of tokens to summarise as a batch.',
+                    'batch_stride': 'Number of tokens to overlap between each batches.'
+                }
             }
         }
 
