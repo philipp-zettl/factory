@@ -1,4 +1,4 @@
-from .pipelines import IPFaceIDPipeline, IPPipeline, DiffusionModel, ONNXDiffusionModel, Speech5TTSPipeline, BarkTTSPipeline, SummarizationPipeline, QRCodePipeline, ChatPipeline, SpeechToTextPipeline, ONNXChatPipeline
+from .pipelines import IPFaceIDPipeline, IPPipeline, DiffusionModel, ONNXDiffusionModel, Speech5TTSPipeline, BarkTTSPipeline, SummarizationPipeline, QRCodePipeline, ChatPipeline, SpeechToTextPipeline, ONNXChatPipeline, HARTPipeline
 import yaml
 
 
@@ -16,7 +16,11 @@ available_constructors = {
     # ONNX support
     ONNXDiffusionModel.__name__: ONNXDiffusionModel,
     ONNXChatPipeline.__name__: ONNXChatPipeline,
+
+    # HART
+    HARTPipeline.__name__: HARTPipeline,
 }
+
 
 class ModelManager:
     def __init__(self, config_file='./models/model_manager.yaml', load_models=True):

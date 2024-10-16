@@ -1,9 +1,26 @@
 import os
 import json
+import random
 import torch
 import torch._dynamo
+import numpy as np
+import onnxruntime_genai as og
+from PIL import Image
+
 from diffusers import DiffusionPipeline, DPMSolverMultistepScheduler, StableDiffusionPipeline, DDIMScheduler, AutoencoderKL
 from optimum.onnxruntime import ORTStableDiffusionPipeline, ORTStableDiffusionXLPipeline
+
+from transformers import (
+    AutoConfig,
+    AutoModel,
+    AutoModelForCausalLM,
+    AutoTokenizer,
+    HfArgumentParser,
+    set_seed,
+    BitsAndBytesConfig,
+)
+from hart.modules.models.transformer import HARTForT2I
+from hart.utils import default_prompts, encode_prompts, llm_system_prompt
 
 from factory.ml.models import DiffusionPipelineConfig, ONNXDiffusionPipelineConfig
 from factory.ml.pipelines.general import PipelineMixin
@@ -174,7 +191,7 @@ class ONNXDiffusionModel(DiffusionModel):
             'output_type': self.output_type,
             'parameters': {
                 'inputs': 'An image of a cat',
-                **self.model_params,
+                **{**self.model_params, **{k: '' for k in self.allowed_params}},
             }
         }
 
@@ -200,4 +217,121 @@ class ONNXDiffusionModel(DiffusionModel):
             negative_prompt=negative_prompt,
             **options
         ).images
+
+
+class HARTPipeline(PipelineMixin):
+    output_type = "image"
+    
+    def __init__(self, max_token_length=300, use_ema=False, device='cuda'):
+        self.model_params = {
+            "seed": 0,
+            "guidance_scale": 4.5,
+            "randomize_seed": False,
+            "more_smooth": True,
+        }
+        self.max_token_length = max_token_length
+        self.use_ema = use_ema
+        self.device = device
+
+    def _load_pipeline(self):
+        model_path = './models/HART/hart-0.7b-1024px/llm'
+        text_model_path = './models/HART/Qwen2-VL-1.5B-Instruct'
+        quantization_config = BitsAndBytesConfig(load_in_4bit=True)
+        self.model = AutoModel.from_pretrained(model_path, torch_dtype=torch.float16)
+        self.model = self.model.to(self.device)
+        self.model.eval()
+        if self.use_ema:
+            self.model.load_state_dict(
+                torch.load(os.path.join(model_path, "ema_model.bin"))
+            )
+
+        self.text_tokenizer = AutoTokenizer.from_pretrained(text_model_path)
+        self.text_model = AutoModel.from_pretrained(text_model_path, quantization_config=quantization_config)#.to('cpu')
+        self.text_model.eval()
+        self.text_tokenizer_max_length = self.max_token_length
+
+    def randomize_seed_fn(self, seed: int, randomize_seed: bool) -> int:
+        if randomize_seed:
+            seed = random.randint(0, 999999)
+        return seed
+
+    def generate(
+        self,
+        prompt: str,
+        seed: int = 0,
+        # width: int = 1024,
+        # height: int = 1024,
+        guidance_scale: float = 4.5,
+        randomize_seed: bool = True,
+        more_smooth: bool = True,
+    ):
+        # pipe.to(device)
+        seed = int(self.randomize_seed_fn(seed, randomize_seed))
+        generator = torch.Generator().manual_seed(seed)
+
+        prompts = [prompt]
+
+        with torch.inference_mode():
+            (
+                context_tokens,
+                context_mask,
+                context_position_ids,
+                context_tensor,
+            ) = encode_prompts(
+                prompts,
+                self.text_model,
+                self.text_tokenizer,
+                self.max_token_length,
+                llm_system_prompt,
+                True
+            )
+
+            infer_func = self.model.autoregressive_infer_cfg
+            device = self.device
+            with torch.autocast(
+                device, enabled=True, dtype=torch.float16, cache_enabled=True
+            ):
+
+                output_imgs = infer_func(
+                    B=context_tensor.size(0),
+                    label_B=context_tensor.to(device),
+                    cfg=guidance_scale,
+                    g_seed=seed,
+                    more_smooth=more_smooth,#args.more_smooth,
+                    context_position_ids=context_position_ids.to(device),
+                    context_mask=context_mask.to(device),
+                    num_maskgit_iters=1
+                ).float()
+
+        # bs, 3, r, r
+        images = []
+        sample_imgs_np = output_imgs.clone().mul_(255).cpu().numpy()
+        num_imgs = sample_imgs_np.shape[0]
+        for img_idx in range(num_imgs):
+            cur_img = sample_imgs_np[img_idx]
+            cur_img = cur_img.transpose(1, 2, 0).astype(np.uint8)
+            cur_img_store = Image.fromarray(cur_img)
+            images.append(cur_img_store)
+
+        return images
+
+    def run_task(self, task):
+        params = task.parameters.dict()
+        filtered_params = {k: v for k, v in params.items() if k in self.model_params}
+        return self.generate(task.inputs, **filtered_params)
+
+    def get_options(self):
+        return {
+            'task': 'text-to-image',
+            'output_type': self.output_type,
+            'parameters': {
+                'inputs': 'An image of a cat',
+                **self.model_params,
+            }
+        }
+
+    def get_task(self, is_multi):
+        if is_multi:
+            raise ValueError("Invalid task")
+        return "text-to-image"
 

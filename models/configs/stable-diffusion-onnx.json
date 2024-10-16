@@ -1,6 +1,6 @@
 {
   "base": {
-      "model_id": "EasyBits/ProteusV0.4.fp16"
+      "model_id": "./models/ssd-1b-onnx"
   },
   "use_scheduler": true
 }

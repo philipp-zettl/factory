@@ -25,7 +25,7 @@ class I2I:
 
 
 if __name__ == '__main__':
-    i2i = I2I('http://localhost:7777')
+    i2i = I2I('http://localhost:8001')
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--model', type=str, required=False, default='ip')
@@ -41,6 +41,7 @@ if __name__ == '__main__':
     parser.add_argument('--num_samples', type=int, required=False, default=1)
     parser.add_argument('--seed', type=int, required=False, default=2024)
     parser.add_argument('--output', type=str, required=False, default='ip.jpg')
+    parser.add_argument('--single_generation', action='store_true', default=False)
 
     args = parser.parse_args()
 
@@ -73,7 +74,15 @@ if __name__ == '__main__':
     prompt = payload['parameters']['prompt'].lower().replace(' ', '_')
     filenames = []
 
-    for param in np.linspace(0.1, 1.0, 50):
+    if args.single_generation:
+        res = i2i.post(f'/models/{args.model}', payload)
+        filename = f'results/{args.model}/{prompt}.jpg'
+        filenames.append(filename)
+        with open(filename, 'wb') as f:
+            f.write(res.content)
+        exit(0)
+
+    for param in np.linspace(0.1, 0.5, 10):
         payload['parameters']['scale'] = param
         res = i2i.post(f'/models/{args.model}', payload)
         filename = f'results/{args.model}/{prompt}-scale={param}.jpg'
@@ -87,7 +96,8 @@ if __name__ == '__main__':
     for i, name in enumerate(filenames):
         axs[i].imshow(plt.imread(name))
         axs[i].axis('off')
-        axs[i].set_title(f'Scale: {param:.1f}')
+        param = name.split('=')[-1].replace('.jpg', '')
+        axs[i].set_title(f'Scale: {param}')
 
     plt.tight_layout()
     plt.savefig(f'results/{args.model}/{prompt}-overview.jpg')

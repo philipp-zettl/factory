@@ -7,40 +7,37 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = ">=3.10,<3.12"
-diffusers = "0.28.0"
-fastapi = {extras = ["standard"], version = "^0.112.0"}
+diffusers = "0.28.2"
+fastapi = "0.101.1"
 uvicorn = "^0.29.0"
-torch = "2.2.2"
-accelerate = "^0.29.1"
+torch = "2.3.0"
+accelerate = "0.27.2"
 transformers = "^4.39.3"
 peft = "^0.10.0"
 torchao = "^0.1"
-opencv-python = "^4.9.0.80"
+opencv-python = "4.8.0.74"
 insightface = "^0.7.3"
 ip-adapterv = "^0.1.0"
-einops = "^0.7.0"
-torchvision = "^0.17.2"
+einops = "0.6.1"
 pillow = "^10.3.0"
 onnxruntime = "^1.17.3"
 numpy = "^1.22.0"
 pydub = "^0.25.1"
 bark = "^0.1.5"
-nltk = "^3.8.1"
+nltk = "3.3"
 qrcode = "^7.4.2"
 optimum = {extras = ["exporters"], version = "^1.21.4"}
-onnxruntime-genai = "0.2.0rc7"
+onnxruntime-genai = "0.4.0"
 python-multipart = "^0.0.9"
 ipywebrtc = "^0.6.0"
 python-dotenv = "^1.0.1"
+bitsandbytes = "^0.44.0"
+hart = {git = "https://github.com/mit-han-lab/hart"}
 
 [tool.poetry.group.dev.dependencies]
 pillow = "^10.3.0"
 numpy = "^1.26.4"
-datasets = "^2.18.0"
 tqdm = "^4.66.2"
-torchvision = "^0.17.2"
-jupyter = "^1.0.0"
-notebook = "^7.1.2"
 
 
 [build-system]

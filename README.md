@@ -16,8 +16,10 @@ Provides API endpoints for general purpose GAI.
 - Pipeline implementations for different generation tasks
   - text2image
     - Diffusion
-    - ONNX Diffusion models
-    - incl. LoRA loading
+      - regular Diffusion models
+      - ONNX Diffusion models
+      - incl. LoRA loading
+    - [HART](https://huggingface.co/mit-han-lab/hart-0.7b-1024px) (see below for instructions)
   - image2image
     - IP-Adapter, Portrait and non-portrait (incl. PLUS)
     - ControlNet
@@ -258,11 +260,39 @@ res = requests.post('http://localhost:8889/models/ip-faces-multi', json={
 })
 ```
 
+## Special Architectures
+### HART
+HART is a hybrid model that combines Qwen2 with a diffusion model.
+
+To get started with HART, you need to download the specific models from the HuggingFace hub.
+```shell
+poetry run huggingface-cli download mit-han-lab/hart-0.7b-1024px --local-dir models/HART/hart-0.7b-1024px
+poetry run huggingface-cli download mit-han-lab/Qwen2-VL-1.5B-Instruct --local-dir models/HART/Qwen2-VL-1.5B-Instruct
+```
+
+Configure the model in the `model_manager.yaml` file either as base model
+```yaml
+base:
+  hart:
+    constructor: HARTPipeline
+```
+
+Or as standalone model
+```yaml
+models:
+  hart:
+    constructor: HARTPipeline
+```
+
+> [!IMPORTANT]
+> HART does not support ControlNet or LoRA models as of now.
+
 ## Acknowledgements
 Special thanks to the developers and authors of the models used in this project.
 This project could not have been possible without the following:
 - [IP-Adapter](https://huggingface.co/h94/IP-Adapter/tree/main) for several image2image models
 - [monster-labs](https://huggingface.co/monster-labs/control_v1p_sd15_qrcode_monster) for the QRCode model
+- [mit-han-lab](https://huggingface.co/mit-han-lab/hart-0.7b-1024px) for the HART model
 - [huggingface 🤗](https://huggingface.co/) for diffusers and the model-hub
 - [pytorch](https://pytorch.org/) for the amazing deep learning framework
 - [NGINX](https://www.nginx.com/) for the reverse proxy
