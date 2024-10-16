@@ -228,6 +228,7 @@ class HARTPipeline(PipelineMixin):
             "guidance_scale": 4.5,
             "randomize_seed": False,
             "more_smooth": True,
+            "enhance_prompt": True
         }
         self.max_token_length = max_token_length
         self.use_ema = use_ema
@@ -264,6 +265,7 @@ class HARTPipeline(PipelineMixin):
         guidance_scale: float = 4.5,
         randomize_seed: bool = True,
         more_smooth: bool = True,
+        enhance_prompt: bool = True,
     ):
         # pipe.to(device)
         seed = int(self.randomize_seed_fn(seed, randomize_seed))
@@ -283,7 +285,7 @@ class HARTPipeline(PipelineMixin):
                 self.text_tokenizer,
                 self.max_token_length,
                 llm_system_prompt,
-                True
+                enhance_prompt,
             )
 
             infer_func = self.model.autoregressive_infer_cfg
@@ -318,7 +320,10 @@ class HARTPipeline(PipelineMixin):
     def run_task(self, task):
         params = task.parameters.dict()
         filtered_params = {k: v for k, v in params.items() if k in self.model_params}
-        return self.generate(task.inputs, **filtered_params)
+        generation = self.generate(task.inputs, **filtered_params)
+        # clear caches
+        torch.cuda.empty_cache()
+        return generation
 
     def get_options(self):
         return {

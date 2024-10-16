@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 import enum
 import numpy as np
 
@@ -22,6 +22,8 @@ class GenerationRequest(BaseModel):
 
 
 class TextToImageParameters(BaseModel):
+    model_config = ConfigDict(extra='allow')
+
     negative_prompt: str = None
     num_inference_steps: int = 45
     guidance_scale: float = 7
