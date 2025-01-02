@@ -22,22 +22,24 @@ class LLMChat:
     def __init__(self, host: str, prompt: str | None = None, model_name: str = 'Qwen'):
         self.session = Session()
         self.host_url = host
-        self.history = [{
-            'role': 'system',
-            'content': prompt
-        }]
+        if not prompt:
+            self.history = []
+        else:
+            self.history = [{
+                'role': 'system',
+                'content': prompt
+            }]
         self.model_name = model_name
     
     def send_message(self, message: str, history=None):
         if history is None:
             history = []
-        history.append({'role': 'user', 'content': message})
         res = self.session.post(
             urljoin(urljoin(self.host_url, 'models/'), self.model_name),
             json={
-                'inputs': self.history,
+                'inputs': history,
                 'parameters': {
-                    'use_cache': False, 'max_new_tokens': 128, 'temperature': 0.3
+                    'use_cache': False, 'max_new_tokens': 150, 'temperature': 0.7, 'top_k': 50, 'top_p': 0.9, 'repetition_penalty': 1.2, 'num_beams': 4 #'presence_penalty': 0.3
                 }
             }
         )

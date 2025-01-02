@@ -1,4 +1,4 @@
-from .pipelines import IPFaceIDPipeline, IPPipeline, DiffusionModel, ONNXDiffusionModel, Speech5TTSPipeline, BarkTTSPipeline, SummarizationPipeline, QRCodePipeline, ChatPipeline, SpeechToTextPipeline, ONNXChatPipeline, HARTPipeline
+from .pipelines import IPFaceIDPipeline, IPPipeline, DiffusionModel, ONNXDiffusionModel, Speech5TTSPipeline, BarkTTSPipeline, SummarizationPipeline, QRCodePipeline, ChatPipeline, SpeechToTextPipeline, ONNXChatPipeline, HARTPipeline, SanaPipeline
 import yaml
 
 
@@ -19,6 +19,7 @@ available_constructors = {
 
     # HART
     HARTPipeline.__name__: HARTPipeline,
+    SanaPipeline.__name__: SanaPipeline,
 }
 
 
