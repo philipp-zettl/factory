@@ -236,15 +236,3 @@ Aragorn: "This spot is defensible, but the open ground leaves us exposed to arch
     )
 
     campaign.run_game_loop()
-
-    exit(0)
-    # Interact
-    prompt = input("Enter a prompt: ")
-    response = campaign.send_message("Grimbgard", prompt, role="player")
-    print(f"{bcolors.OKGREEN}Grimbgard: {response}{bcolors.ENDC}")
-
-    response = campaign.send_message("Gandalf", response, role='npc')#"Beware, Grimbgard. The shadows are stirring.", role="npc")
-    print(f"{bcolors.OKBLUE}Gandalf: {response}{bcolors.ENDC}")
-
-    # Save and load state
-    campaign.save_campaign("campaign_state.json")
