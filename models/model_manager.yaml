@@ -3,7 +3,9 @@ base_models:
   #  constructor: SanaPipeline
   #  args:
   #    - 'Efficient-Large-Model/Sana_600M_512px_diffusers'
-  Qwen:
-    constructor: ChatPipeline
-    args:
-      - 'meta-llama/Llama-3.2-1B-Instruct'
+  #Qwen:
+  #  constructor: ChatPipeline
+  #  args:
+  #    - 'meta-llama/Llama-3.2-1B-Instruct'
+  kokoro:
+    constructor: KokoroTTSPipeline

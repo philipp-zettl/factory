@@ -34,6 +34,8 @@ python-dotenv = "^1.0.1"
 bitsandbytes = "^0.44.0"
 setuptools = "^75.6.0"
 beautifulsoup4 = "^4.12.3"
+phonemizer = "^3.3.0"
+munch = "^4.0.0"
 
 [tool.poetry.group.dev.dependencies]
 pillow = "^10.3.0"

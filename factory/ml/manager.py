@@ -1,4 +1,4 @@
-from .pipelines import IPFaceIDPipeline, IPPipeline, DiffusionModel, ONNXDiffusionModel, Speech5TTSPipeline, BarkTTSPipeline, SummarizationPipeline, QRCodePipeline, ChatPipeline, SpeechToTextPipeline, ONNXChatPipeline, HARTPipeline, SanaPipeline
+from .pipelines import IPFaceIDPipeline, IPPipeline, DiffusionModel, ONNXDiffusionModel, Speech5TTSPipeline, BarkTTSPipeline, SummarizationPipeline, QRCodePipeline, ChatPipeline, SpeechToTextPipeline, ONNXChatPipeline, HARTPipeline, SanaPipeline, KokoroTTSPipeline
 import yaml
 
 
@@ -13,6 +13,7 @@ available_constructors = {
     QRCodePipeline.__name__: QRCodePipeline,
     ChatPipeline.__name__: ChatPipeline,
     SpeechToTextPipeline.__name__: SpeechToTextPipeline,
+    KokoroTTSPipeline.__name__: KokoroTTSPipeline,
     # ONNX support
     ONNXDiffusionModel.__name__: ONNXDiffusionModel,
     ONNXChatPipeline.__name__: ONNXChatPipeline,
