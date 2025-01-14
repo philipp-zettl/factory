@@ -91,10 +91,6 @@ async def generate(
         'chat-completion': ChatCompletionRequest,
         'automatic-speech-recognition': SpeechToTextRequest,
     }.get(task)(**{**task_params, 'task': task, 'is_multi': is_multi})
-    if model is None:
-        response.status_code = 400
-        print('Model not found')
-        return {'error': 'Model not found'}
     try:
         results = model.run_task(task)
     except ValueError as e:
